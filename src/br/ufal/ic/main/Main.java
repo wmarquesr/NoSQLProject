@@ -87,8 +87,11 @@ public class Main {
                 try {
                     BaseXClient.Query query = session.query(input);
 
+                    String a;
+
                     while (query.more()) {
-                        System.out.println(query.next());
+                        a = query.next().replaceAll("</", "").replaceAll("<", "").replaceAll(">", "");
+                        System.out.println(a);
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -155,12 +158,14 @@ public class Main {
                         System.out.println("Livros:\n");
 
                         // IMPRIMIR DADOS DOS LIVROS
-                        System.out.println("Resultado para BaseX:\n");
+                        //System.out.println("Resultado para BaseX:\n");
 
                         BaseXClient.Query query = session.query("for $x in doc('" + dbName +"')//book where $x/aula = '" + i + "' return $x");
+                        String a;
 
                         while (query.more()) {
-                            System.out.println(query.next());
+                            a = query.next().replaceAll("</", "").replaceAll("<", "").replaceAll(">", "");
+                            System.out.println(a);
                         }
                     }
                 }
