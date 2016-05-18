@@ -90,7 +90,7 @@ public class Main {
                     String a;
 
                     while (query.more()) {
-                        a = query.next().replaceAll("</", "").replaceAll("<", "").replaceAll(">", "");
+                        a = query.next().replaceAll("</", "").replaceAll("<", "").replaceAll(">", " ");
                         System.out.println(a);
                     }
                 } catch (IOException e) {
@@ -164,7 +164,14 @@ public class Main {
                         String a;
 
                         while (query.more()) {
-                            a = query.next().replaceAll("</", "").replaceAll("<", "").replaceAll(">", "");
+                            a = query.next().replaceAll("</", "").replaceAll("<", "").replaceAll(">", " ");
+                            a = a.replaceAll("book", "");
+                            a = a.replaceAll("author", "");
+                            a = a.replaceAll("title", "");
+                            a = a.replaceAll("aula", "");
+                            a = a.replaceAll("genre", "");
+                            a = a.replaceAll("price", "");
+                            a = a.replaceAll("publish_date", "");
                             System.out.println(a);
                         }
                     }
