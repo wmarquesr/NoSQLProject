@@ -15,16 +15,16 @@ public class MainTEst {
         try(final BaseXClient session = new BaseXClient("localhost", 1984, "admin", "admin")) {
 
             // create query instance
-            final InputStream bais = new ByteArrayInputStream(FileHandler.readFileIntoString("xml/breakfast.xml").getBytes());
+            final InputStream bais = new ByteArrayInputStream(FileHandler.readFileIntoString("xml/books.xml").getBytes());
 
             // create new database
-            session.create("breakfast", bais);
+            session.create("books", bais);
             System.out.println("Info: " + session.info());
 
             // run query on database
             //System.out.println("XQuery: " + session.execute("xquery doc('database')"));
 
-            BaseXClient.Query query = session.query("for $x in doc('breakfast')//food where $x/price > 5.0 return data($x/name)");
+            BaseXClient.Query query = session.query("for $x in doc('books')//book where $x/genre is Computer return data($x/name)");
 
             //BaseXClient.Query query = session.query("//price");
 

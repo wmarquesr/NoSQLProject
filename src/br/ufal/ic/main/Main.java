@@ -1,138 +1,236 @@
 package br.ufal.ic.main;
 
-import br.ufal.ic.basex.BaseXClient;
-import br.ufal.ic.util.FileHandler;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Scanner;
 
+import br.ufal.ic.basex.BaseXClient;
+import br.ufal.ic.util.FileHandler;
+import br.ufal.ic.util.FirebaseUtil;
+import net.thegreshams.firebase4j.service.Firebase;
+import utils.Materia;
+import utils.Materias;
+
 public class Main {
 
-    public static void main(String[] args) {
+	public static void main(String[] args) {
 
-        Properties prop = FileHandler.loadPropertiesFile();
-        Scanner userInput = new Scanner(System.in);
-        String dbName = "";
+		// Iniciando o Firebase
+		FirebaseUtil fbu = new FirebaseUtil();
 
-        //Connecting to localhost.
-        try(final BaseXClient session = new BaseXClient("localhost", 1984, "admin", "admin")) {
+		Firebase fb = fbu.iniciateServerConnection();
 
-            //final InputStream bais = null;
+		if (fb == null) {
+			System.out.println("Erro de conex„o com o Firebase.\n");
+			return;
+		}
 
-            System.out.println("Selecione umas da bases ou carregue uma nova: \n (1) - Breakfast     (2) - CD's     (3) - Nova Base");
+		// ArrayList de materias com os dados do Firebase
+		ArrayList<Materia> materias = fbu.collectData();
 
-            int choice = Integer.parseInt(userInput.next());
+		Properties prop = FileHandler.loadPropertiesFile();
+		Scanner userInput = new Scanner(System.in);
+		String dbName = "";
 
-            if (choice == 1){
-                // create query instance to breakfast file.
-                final InputStream bais = new ByteArrayInputStream(FileHandler.readFileIntoString(prop.getProperty("BREAKFAST_PATH")).getBytes());
-                dbName = "breakfast";
-                session.create(dbName, bais);
+		// Connecting to localhost.
+		try (final BaseXClient session = new BaseXClient("localhost", 1984, "admin", "admin")) {
 
-                //Caio carrega o arkivo pra o firebase aki.
-            } else if (choice == 2){
-                // create query instance to cd_catalog file.
-                final InputStream bais = new ByteArrayInputStream(FileHandler.readFileIntoString(prop.getProperty("CD_CATALOG_PATH")).getBytes());
-                dbName = "cd_catalog";
-                session.create(dbName, bais);
+			// final InputStream bais = null;
 
-                //Caio carrega o arkivo pra o firebase aki.
-            } else if (choice == 3){
-                System.out.println("Digite o caminho absoluto do arquivo xml: ");
+			System.out.println(
+					"Selecione umas da bases ou carregue uma nova: \n (1) - Breakfast     (2) - CD's     (3) - Books");
 
-                String newDB = userInput.next();
+			int choice = Integer.parseInt(userInput.next());
 
-                if (new File(newDB).exists()){
-                    // create query instance to user file.
-                    final InputStream bais = new ByteArrayInputStream(FileHandler.readFileIntoString(newDB).getBytes());
-                    dbName = new File(newDB).getName().replace(".xml", "");
-                    session.create(dbName, bais);
+			if (choice == 1) {
+				// create query instance to breakfast file.
+				final InputStream bais = new ByteArrayInputStream(
+						FileHandler.readFileIntoString(prop.getProperty("BREAKFAST_PATH")).getBytes());
+				dbName = "breakfast";
+				session.create(dbName, bais);
 
-                    //Caio carrega o arkivo pra o firebase aki.
-                } else {
-                    System.out.println("Arquivo n√£o existe.");
-                }
-            }
+				// Caio carrega o arkivo pra o firebase aki.
+			} else if (choice == 2) {
+				// create query instance to cd_catalog file.
+				final InputStream bais = new ByteArrayInputStream(
+						FileHandler.readFileIntoString(prop.getProperty("CD_CATALOG_PATH")).getBytes());
+				dbName = "cd_catalog";
+				session.create(dbName, bais);
 
-            // create new database
-            System.out.println("Info: " + session.info());
+				// Caio carrega o arkivo pra o firebase aki.
+			} /*else if (choice == 3) {
+				System.out.println("Digite o caminho absoluto do arquivo xml: ");
 
-            //Caio cria aki o banco usando o arkivo (FIreBase).
+				String newDB = userInput.next();
 
-            System.out.println("Gostaria de realizar uma consulta ?\n (1) - BaseX     (2) - FireBase     (3) - Ambos");
+				if (new File(newDB).exists()) {
+					// create query instance to user file.
+					final InputStream bais = new ByteArrayInputStream(FileHandler.readFileIntoString(newDB).getBytes());
+					dbName = new File(newDB).getName().replace(".xml", "");
+					session.create(dbName, bais);
 
-            choice = Integer.parseInt(userInput.next());
-            String input = "";
+					// Caio carrega o arkivo pra o firebase aki.
+				} else {
+					System.out.println("Arquivo n√£o existe.");
+				}
+			}*/
 
-            //Tow usando o modelo d consulta SQL s√≥ pra poder fazer uma unica consulta funfar nos dois sistemas.
-            String select = "";
-            String from = "";
-            String where = "";
-            String orderby = "";
+			// create new database
+			System.out.println("Info: " + session.info());
 
-            if (choice == 1) {
-                System.out.println("Digite sua consulta para BaseX: ");
+			// Caio cria aki o banco usando o arkivo (FIreBase).
 
-                BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-                input = br.readLine();
+			System.out.println("Gostaria de realizar uma consulta ?\n (1) - BaseX     (2) - FireBase     (3) - Ambos");
 
-                try  {
-                    BaseXClient.Query query = session.query(input);
+			choice = Integer.parseInt(userInput.next());
+			String input = "";
 
-                    while (query.more()) {
-                        System.out.println(query.next());
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            } else if (choice == 2) {
+			// Tow usando o modelo d consulta SQL s√≥ pra poder fazer uma unica
+			// consulta funfar nos dois sistemas.
+			String select = "";
+			String from = "";
+			String where = "";
+			String orderby = "";
 
-                //Caio escreve o c√≥digo pra pegar a consulta em FIreBase digitada pelo usuario aki.
+			if (choice == 1) {
+				System.out.println("Digite sua consulta para BaseX: ");
 
-            } else if (choice == 3) {
+				BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+				input = br.readLine();
 
-                System.out.println("SELECT: ");
-                select = userInput.next();
+				try {
+					BaseXClient.Query query = session.query(input);
 
-                System.out.println("FROM: ");
-                from = userInput.next();
+					while (query.more()) {
+						System.out.println(query.next());
+					}
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			} else if (choice == 2) {
 
-                System.out.println("WHERE: ");
-                where = userInput.next();
+				System.out.println("Digite sua consulta para o Firebase: ");
 
-                System.out.println("ORDER BY: ");
-                orderby = userInput.next();
+		
+				System.out.println("Comandos:\n");
 
-                //Mounting query fro BaseX.
-                try  {
-                    System.out.println("Resultado para BaseX:\n");
-
-                    BaseXClient.Query query = session.query("for $x in doc('" + from + "')//" + select + " where $x/" + where + " order by $x/" + orderby + " return $x");
-
-                    while (query.more()) {
-                        System.out.println(query.next());
-                    }
-
-                    System.out.println("\nResultado para FireBase:\n");
-
-                    /*
-                    *
-                    * Caio aki voc√™ monta a query com o formato do FireBase usando o SELEC FROM WHERE ORDERBY que o usu√°rio deu e printa na tela.
-                    *
-                    * */
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-            }
-
-            // drop database
-            session.execute("drop db " + dbName);
-            System.out.println("\nDrop: " + dbName + " foi exclu√≠do.");
+				System.out.println("1 - Exibir base.");
+				System.out.println("2 - Exibir matÈrias.");
+				System.out.println("3 - Realizar consulta.\n");
+				
+				BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+				input = br.readLine();
 
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+				switch (input) {
+				case "1":
+					for (Materia m : materias) {
+						System.out.println(m.toString());
+					}
+					break;
+				case "2":
+					for (Materia m : materias) {
+						System.out.println(m.nome);
+					}
+					break;
+				case "3":
+
+					BufferedReader br2 = new BufferedReader(new InputStreamReader(System.in));
+					input = br2.readLine();
+
+					System.out.println(
+							"Digite o nome da matÈria, professor, aluno ou matrÌcula de aluno para buscar na base.\n");
+
+					ArrayList<Materia> m = fbu.consult(input, true);
+
+					break;
+				}
+
+				//System.out.println("As matÈrias na base s„o:\n");
+				//for (Materia m : materias) {
+				//					System.out.println(m.nome);
+				//			}
+
+			} else if (choice == 3) {
+
+				System.out.println("Digite o nome de uma matÈria para consultar seus dados: \n");
+				
+				boolean flag = true;
+
+				while (flag) {
+					String i = userInput.next();
+					
+					ArrayList<Materia> mat2 = fbu.consult(i, false);
+
+					if (mat2 == null) {
+						System.out.println("Nenhum dado atendeu a sua consulta, consulte novamente\n");
+					} else {
+						flag = false;
+					}
+
+					for (Materia m : mat2) {
+						System.out.println(m.toString());
+						System.out.println("Livros:\n");
+						// IMPRIMIR DADOS DOS LIVROS
+						
+
+					}
+
+				}
+
+				// System.out.println("SELECT: ");
+				// select = userInput.next();
+
+				// System.out.println("FROM: ");
+				// from = userInput.next();
+
+				// System.out.println("WHERE: ");
+				// where = userInput.next();
+
+				// System.out.println("ORDER BY: ");
+				// orderby = userInput.next();
+
+				// Mounting query fro BaseX.
+				try {
+					/*
+					 * System.out.println("Resultado para BaseX:\n");
+					 * 
+					 * BaseXClient.Query query = session.query("for $x in doc('"
+					 * + from + "')//" + select + " where $x/" + where +
+					 * " order by $x/" + orderby + " return $x");
+					 * 
+					 * while (query.more()) { System.out.println(query.next());
+					 * }
+					 * 
+					 * System.out.println("\nResultado para FireBase:\n");
+					 * 
+					 */
+
+					/*
+					 *
+					 * Caio aki voc√™ monta a query com o formato do FireBase
+					 * usando o SELEC FROM WHERE ORDERBY que o usu√°rio deu e
+					 * printa na tela.
+					 *
+					 */
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+
+			}
+
+			// drop database
+			session.execute("drop db " + dbName);
+			System.out.println("\nDrop: " + dbName + " foi exclu√≠do.");
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 }
